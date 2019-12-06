@@ -12,7 +12,9 @@ class ANN:
 	'''
 	def __init__(self):
 		self.loss = "mse"
-		self.optimiser = None
+		self.learning_rate = 0.01
+		# this will contain all of the layers in this list
+		self.layers = []
 
 	'''
 	Function Name: compile
@@ -22,10 +24,17 @@ class ANN:
 
 	Function parameters:
 	-loss: Specifies what loss function we want to use.
-	-optimiser: How we are going to optimise the weights and biases.
+	-learning_rate: A value specifying how fast we learn.
+
+	note: consider updating later with the adam optimizer among others.
 	'''
-	def compile(self, loss, optimiser):
-		pass
+	def compile(self, loss, learning_rate):
+		if loss == "mse":
+			self.loss = self.mse
+		# This is to be changes later. Default is just a placeholder.
+		if optimiser == "default":
+			self.optimiser = "default"
+			self.learning_rate = 0.01
 
 	'''
 	Function Name: fit
@@ -40,6 +49,9 @@ class ANN:
 	-batch_size: After how many training instances do we update the training instances.
 	'''
 	def fit(self, X, y, epochs, batch_size):
+		# This will call the getOutput function in each layers class and fit it this way.
+		# Then we will backpropagate through everything and update the weights according
+		# to the batch_size. This is repeated for each epoch.
 		pass
 
 	'''
@@ -72,24 +84,32 @@ class ANN:
 	This function adds a layer to the neural network.
 	'''
 	def add(self, t_layer):
-		pass
+		self.layers.append(t_layer)
 
 	'''
 	Function Name: saveWeights
 
 	Function Description:
 	Function that saves the weights and bias values of the neural network.
+
+	Function Parameters:
+	-filename: The name of the file to save the weights (biases to)
 	'''
-	def saveWeights(self):
+	def saveWeights(self, filename):
 		pass
 
 	'''
 	Function Name: readWeights
 
 	Function Description:
-	Function that reads in weights and biases from a nerual network made by saveWeights function.
+	Function that reads in weights and biases from a nerual network with the format consistent to
+	what saveWeights outputs.
+	All layers have to be added in first to match the data to be read in.
+
+	Function Parameters:
+	-filename: The filename to read the weights from.
 	'''
-	def readWeights(self):
+	def readWeights(self, filename):
 		pass
 
 	'''
@@ -142,13 +162,27 @@ class Dense:
 	-activation: string that specifies what activation function we want.
 	'''
 	def setActivation(self, activation):
-		if activation == "sigmoid": 
+		if activation == "sigmoid":
 			self.activation = self.sigmoid
 		elif activation == "relu":
 			self.activation = self.relu
 		elif activation == "elu":
 			self.activation = self.elu
 
+	'''
+	Function Name: getOutput
+
+	Function Description:
+	Gets the output for the input to the next layer.
+
+	Function Parameters:
+	-inputx: The initial input from the data or from the previous layer.
+	'''
+	def getOutput(self, inputx):
+		print("weights", self.weights)
+		print("inputx", inputx)
+		print("bias", self.bias)
+		return np.dot(self.weights, inputx) + self.bias
 
 	'''
 	Function Name: initWeights
@@ -164,9 +198,9 @@ class Dense:
 	def initWeights(self, iw):
 		self.weights = None
 		if iw == "random":
-			self.weights = np.random.rand(self.input_shape, self.units)
+			self.weights = np.random.rand(self.units, self.input_shape)
 		elif iw == "random_s":
-			self.weights = np.random.rand(self.input_shape, self.units) * 0.1
+			self.weights = np.random.rand(self.units, self.input_shape) * 0.1
 
 	'''
 	Function Name: initBias
@@ -235,6 +269,7 @@ class Dense:
 
 def main():
 	d = Dense(3, 6, "test", "random_s", "random_s")
-	print(d.weights)
+	print(d.bias.shape)
+	print(d.getOutput(np.random.rand(3, 1)))
 
 main()
