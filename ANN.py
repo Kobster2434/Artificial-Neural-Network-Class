@@ -26,15 +26,12 @@ class ANN:
 	-loss: Specifies what loss function we want to use.
 	-learning_rate: A value specifying how fast we learn.
 
-	note: consider updating later with the adam optimizer among others.
+	note: consider updating later with the adam optimizer among others. Currenlty stochastic gradient descent by itself.
 	'''
 	def compile(self, loss, learning_rate):
 		if loss == "mse":
 			self.loss = self.mse
-		# This is to be changes later. Default is just a placeholder.
-		if optimiser == "default":
-			self.optimiser = "default"
-			self.learning_rate = 0.01
+		self.learning_rate = learning_rate
 
 	'''
 	Function Name: fit
@@ -43,8 +40,8 @@ class ANN:
 	This function relates to fitting/training our model.
 
 	Function Parameters:
-	-X: The training data.
-	-y: The labels for the training data.
+	-X: The training data. It is expected that X will be in a numpy array. With pandas this can be achieved by using .to_numpy().
+	-y: The labels for the training data (numpy array).
 	-epochs: The number of iterations through the training data.
 	-batch_size: After how many training instances do we update the training instances.
 	'''
@@ -52,7 +49,45 @@ class ANN:
 		# This will call the getOutput function in each layers class and fit it this way.
 		# Then we will backpropagate through everything and update the weights according
 		# to the batch_size. This is repeated for each epoch.
-		pass
+#		while len()
+			#for i in range(batch_size):
+		nrow = X.shape[0]
+		# note check indeces here. Do they start at 0 or 1 for dataframe in pandas?
+		tc = 0 # training data counter
+		bc = 0 # batch counter
+		epoch_number = 1
+		cumulative_error = np.zeros((self.layers[-1].units,1), dtype = int)
+		while epoch_number <= epochs:
+			while tc < nrow:
+				while bc < batch_size and tc < nrow:
+					# here get output for training instance in X and get/update the cumulative error. 
+					pred = iterLayers(X[tc,:]) # check the notation inside this later. Is , needed?
+					# check the below two lines are correct
+					error = y - pred # y should be the same dimension
+					cumulative_error = cumulative_error + error
+					tc += 1
+					bc += 1
+				bc = 0
+				# updates the weights.
+				self.backpropagate()
+			epoch_number += 1
+			tc = 0
+
+	'''
+	Function Name: iterLayers
+
+	Function Description:
+	Function that iterates through all layers in the network and returns the output for a training instance.
+	This function aids the fit and euvaluation functions:
+
+	Function Parameters:
+	-inst: This is the training instance to pass thorugh the network.
+	'''
+	def iterLayers(self, inst):
+		output = inst
+		for layer in self.layers:
+			output = self.layers.getOutput(output)
+		return output
 
 	'''
 	Function Name: evaluation
@@ -179,10 +214,12 @@ class Dense:
 	-inputx: The initial input from the data or from the previous layer.
 	'''
 	def getOutput(self, inputx):
-		print("weights", self.weights)
-		print("inputx", inputx)
-		print("bias", self.bias)
-		return np.dot(self.weights, inputx) + self.bias
+		#print("weights", self.weights)
+		#print("(inputx", inputx)
+		#print("bias", self.bias)
+		#print(self.activation)
+		#print(inputx.shape)
+		return self.activation(np.dot(self.weights, inputx.reshape(inputx.shape[0], 1)) + self.bias)
 
 	'''
 	Function Name: initWeights
@@ -229,7 +266,7 @@ class Dense:
 	Function Paramters:
 	-x: value to "squish" between zero and one.
 	'''
-	def sigmoid(x):
+	def sigmoid(self, x):
 		return 1.0 / (1 + np.exp(-x))
 
 	'''
@@ -243,7 +280,7 @@ class Dense:
 
 	note: has issues with "dead" relu.
 	'''
-	def relu(x):
+	def relu(self, x):
 		return max(0,x)
 
 	'''
@@ -258,7 +295,7 @@ class Dense:
 	-x: value that is to be "squished".
 	-alpha: Parameter that can be tuned.
 	'''
-	def elu(x, alpha):
+	def elu(self, x, alpha):
 		if alpha < 0:
 			raise Exception("Alpha should not be negative The value of alpha was: {}".format(alpha))
 		else:
@@ -268,8 +305,10 @@ class Dense:
 				return alpha * (np.exp(x) - 1)
 
 def main():
-	d = Dense(3, 6, "test", "random_s", "random_s")
-	print(d.bias.shape)
-	print(d.getOutput(np.random.rand(3, 1)))
 
+	# Test that getOutput function in Dense is correct.
+	d = Dense(3, 6, "sigmoid", "random", "random")
+	#print(d.bias.shape)
+	print("output", d.getOutput(np.array([0.07172362, 0.83726111, 0.11233911])))
+	#print(np.array([0.07172362, 0.83726111, 0.11233911]).reshape((3,1)))
 main()
