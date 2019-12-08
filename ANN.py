@@ -69,7 +69,7 @@ class ANN:
 					bc += 1
 				bc = 0
 				# updates the weights.
-				self.backpropagate()
+				self.backpropagate(cumulative_error)
 			epoch_number += 1
 			tc = 0
 
@@ -106,10 +106,12 @@ class ANN:
 
 	Function Description:
 	The training process of a feed forward neural network.
+	"reverse-mode differentiation"
 
 	Function Parameters:
+	-cum_error: The cumulative error for one batch.
 	'''
-	def backpropagate(self):
+	def backpropagate(self, cum_error):
 		pass
 
 	'''
@@ -284,6 +286,18 @@ class Dense:
 		return max(0,x)
 
 	'''
+	Function Name: softmax
+
+	Function Description:
+	Implementation of the softmax activation function.
+
+	Function Parameters:
+	-x The value to apply this activation function to
+	'''
+	def softmax(self, x):
+		return np.exp(x) / np.sum(np.exp(x), axis = 0)
+
+	'''
 	Function Name: elu
 
 	Function Description:
@@ -309,6 +323,6 @@ def main():
 	# Test that getOutput function in Dense is correct.
 	d = Dense(3, 6, "sigmoid", "random", "random")
 	#print(d.bias.shape)
-	print("output", d.getOutput(np.array([0.07172362, 0.83726111, 0.11233911])))
+	print("output", d.softmax(d.getOutput(np.array([0.07172362, 0.83726111, 0.11233911]))))
 	#print(np.array([0.07172362, 0.83726111, 0.11233911]).reshape((3,1)))
 main()
