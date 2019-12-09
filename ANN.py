@@ -55,7 +55,7 @@ class ANN:
 			while tc < nrow:
 				while bc < batch_size and tc < nrow:
 					iterLayers(X[tc,:])
-					self.backpropagate(y[tc]) # maybe change later depending on what format I force for y. 
+					b, w = self.backpropagate(y[tc]) # maybe change later depending on what format I force for y. 
 					
 					tc += 1
 					bc += 1
@@ -99,16 +99,19 @@ class ANN:
 	"reverse-mode differentiation"
 	'''
 	def backpropagate(self, y):
+		weights = [np.zeros(d.weights.shape) for d in self.layers]
+		bias = [np.zeros(d.bias.shape) for d in self.layers]
 		outlay = self.layers[-1]
-		outlay.delta = self.loss(y, outlay.output, derivative = True) * outlay.activation(outlay.z, derivative = True)
-		outlay.biasbp = outlay.delta
-		outlay.weightsbp = np.dot(outlay.delta, self.layers[-2].output.transpose())
+		delta = self.loss(y, outlay.output, derivative = True) * outlay.activation(outlay.z, derivative = True)
+		bias[-1] = delta
+		weights[-1] = np.dot(delta, self.layers[-2].output.transpose())
 
 		for layer in range(2, len(self.layers)):
-			currlay = self.layers[-layer-1]
-			currlay.delta = np.dot(self.layers[-layer].delta, self.layers[-layer-1].transpose())
-			currlay.biasbp = currlay.delta
-			currlay.weightsbp = np.dot(currlay.delta, self.layers[-layer-2].output.transpose())
+			currlay = self.layers[-layer]
+			delta = np.dot(currlay.weights.transpose(), delta) * currlayer.output
+			bias[-layer] = delta
+			weights[-layer] = np.dot(delta, self.layers[-layer-1].output.transpose())
+		return (bias, weights)
 
 	'''
 	Function Name: add
