@@ -11,7 +11,7 @@ class ANN:
 	Class Parameters:
 	'''
 	def __init__(self):
-		self.loss = "mse"
+		self.loss = None
 		self.learning_rate = 0.01
 		# this will contain all of the layers in this list
 		self.layers = []
@@ -46,13 +46,7 @@ class ANN:
 	-batch_size: After how many training instances do we update the training instances.
 	'''
 	def fit(self, X, y, epochs, batch_size):
-		# This will call the getOutput function in each layers class and fit it this way.
-		# Then we will backpropagate through everything and update the weights according
-		# to the batch_size. This is repeated for each epoch.
-#		while len()
-			#for i in range(batch_size):
 		nrow = X.shape[0]
-		# note check indeces here. Do they start at 0 or 1 for dataframe in pandas?
 		tc = 0 # training data counter
 		bc = 0 # batch counter
 		epoch_number = 1
@@ -60,16 +54,13 @@ class ANN:
 		while epoch_number <= epochs:
 			while tc < nrow:
 				while bc < batch_size and tc < nrow:
-					# here get output for training instance in X and get/update the cumulative error. 
-					pred = iterLayers(X[tc,:]) # check the notation inside this later. Is , needed?
-					# check the below two lines are correct
-					error = y - pred # y should be the same dimension
-					cumulative_error = cumulative_error + error
+					iterLayers(X[tc,:])
+					self.backpropagate(y[tc]) # maybe change later depending on what format I force for y. 
+					
 					tc += 1
 					bc += 1
 				bc = 0
-				# updates the weights.
-				self.backpropagate(cumulative_error)
+				
 			epoch_number += 1
 			tc = 0
 
@@ -87,7 +78,6 @@ class ANN:
 		output = inst
 		for layer in self.layers:
 			output = self.layers.getOutput(output)
-		return output
 
 	'''
 	Function Name: evaluation
@@ -107,12 +97,18 @@ class ANN:
 	Function Description:
 	The training process of a feed forward neural network.
 	"reverse-mode differentiation"
-
-	Function Parameters:
-	-cum_error: The cumulative error for one batch.
 	'''
-	def backpropagate(self, cum_error):
-		pass
+	def backpropagate(self, y):
+		outlay = self.layers[-1]
+		outlay.delta = self.loss(y, outlay.output, derivative = True) * outlay.activation(outlay.z, derivative = True)
+		outlay.biasbp = outlay.delta
+		outlay.weightsbp = np.dot(outlay.delta, self.layers[-2].output.transpose())
+
+		for layer in range(2, len(self.layers)):
+			currlay = self.layers[-layer-1]
+			currlay.delta = np.dot(self.layers[-layer].delta, self.layers[-layer-1].transpose())
+			currlay.biasbp = currlay.delta
+			currlay.weightsbp = np.dot(currlay.delta, self.layers[-layer-2].output.transpose())
 
 	'''
 	Function Name: add
@@ -154,11 +150,12 @@ class ANN:
 
 	Function Description:
 	Calculates the squared error for an observation.
-
-	Come back to this later. Do I want to average in this function or do it afterwards?
 	'''
-	def mse(self, y, y_hat):
-		return (y - y_hat) ** 2
+	def mse(self, y, y_hat, derivative = False):
+		if derivative:
+			return 2 * (y_hat - y)
+		else:
+			return (y - y_hat) ** 2
 
 class Dense:
 
@@ -188,6 +185,7 @@ class Dense:
 		self.initWeights(init_weights)
 		self.initBias(init_bias)
 		self.setActivation(activation)
+		self.delta = None # to be used in backropagation
 
 	'''
 	Function Name: setActivation
@@ -221,7 +219,10 @@ class Dense:
 		#print("bias", self.bias)
 		#print(self.activation)
 		#print(inputx.shape)
-		return self.activation(np.dot(self.weights, inputx.reshape(inputx.shape[0], 1)) + self.bias)
+		self.z = np.dot(self.weights, inputx.reshape(inputx.shape[0], 1)) + self.bias
+		print("Z", self.z)
+		self.output = self.activation(self.z)
+		return self.output
 
 	'''
 	Function Name: initWeights
@@ -236,11 +237,24 @@ class Dense:
 	'''
 	def initWeights(self, iw):
 		self.weights = None
+		self.weightsbp = None # bp for backpropagation.
 		if iw == "random":
 			self.weights = np.random.rand(self.units, self.input_shape)
+			self.weightsbp = np.zeros((self.units, self.input_shape), dtype = float)
 		elif iw == "random_s":
 			self.weights = np.random.rand(self.units, self.input_shape) * 0.1
+			self.weightsbp = np.zeros((self.units, self.input_shape), dtype = float)
 
+	'''
+	Function Name: reset
+
+	Function Description:
+	This function resets the values to zero when called. 
+	This is to be called when we reach a new "batch" of data.
+	'''
+	def reset(self):
+		self.biasbp.fill(0)
+		self.weightsbp.fill(0)
 	'''
 	Function Name: initBias
 
@@ -254,10 +268,13 @@ class Dense:
 	'''
 	def initBias(self, ib):
 		self.bias = None
+		self.biasbp = None # bp for backpropagation.
 		if ib == "random":
 			self.bias = np.random.rand(self.units, 1)
+			self.biasbp = np.zeros((self.units, 1), dtype = float)
 		elif ib == "random_s":
 			self.bias = np.random.rand(self.units, 1) * 0.1
+			self.biasbp = np.zeros((self.units, 1), dtype = float)
 
 	'''
 	Function Name: sigmoid
@@ -267,9 +284,14 @@ class Dense:
 
 	Function Paramters:
 	-x: value to "squish" between zero and one.
+	-derivative: boolean value specifying what to return.
 	'''
-	def sigmoid(self, x):
-		return 1.0 / (1 + np.exp(-x))
+	def sigmoid(self, x, derivative = False):
+		sig = 1.0 / (1 + np.exp(-x))
+		if derivative:
+			return sig * (1 - sig)
+		else:
+			return sig
 
 	'''
 	Function Name: relu
