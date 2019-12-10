@@ -56,11 +56,14 @@ class ANN:
 				while bc < batch_size and tc < nrow:
 					iterLayers(X[tc,:])
 					b, w = self.backpropagate(y[tc]) # maybe change later depending on what format I force for y. 
-					
+					for i in range(len(b)):
+						self.layers[i].weights = self.layers[i].weights + w[i]
+						self.layers[i].bias = self.layers[i].bias + b[i]
 					tc += 1
 					bc += 1
 				bc = 0
-				
+				for layer in self.layers:
+					layer.updateWB(self.learning_rate) # updates both the weights and biases.
 			epoch_number += 1
 			tc = 0
 
@@ -258,6 +261,21 @@ class Dense:
 	def reset(self):
 		self.biasbp.fill(0)
 		self.weightsbp.fill(0)
+
+	'''
+        Function Name: updateWB
+
+        Function Description:
+        This function updates the weights based on the parameters
+
+	Function Parameters:
+	-learning_rate: The value for the learning rate.
+        '''
+	def updateWB(self, learning_rate):
+		self.weights = self.weights - (self.weightsbp * learning_rate)
+		self.bias = self.bias - (self.biasbp * learning_rate)
+		self.reset()
+
 	'''
 	Function Name: initBias
 
