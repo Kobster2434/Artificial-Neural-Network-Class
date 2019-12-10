@@ -50,11 +50,10 @@ class ANN:
 		tc = 0 # training data counter
 		bc = 0 # batch counter
 		epoch_number = 1
-		cumulative_error = np.zeros((self.layers[-1].units,1), dtype = int)
 		while epoch_number <= epochs:
 			while tc < nrow:
 				while bc < batch_size and tc < nrow:
-					iterLayers(X[tc,:])
+					output = self.iterLayers(X[tc,:])
 					b, w = self.backpropagate(y[tc]) # maybe change later depending on what format I force for y. 
 					for i in range(len(b)):
 						self.layers[i].weights = self.layers[i].weights + w[i]
@@ -72,7 +71,7 @@ class ANN:
 
 	Function Description:
 	Function that iterates through all layers in the network and returns the output for a training instance.
-	This function aids the fit and euvaluation functions:
+	This function aids the fit and evaluation functions:
 
 	Function Parameters:
 	-inst: This is the training instance to pass thorugh the network.
@@ -80,7 +79,8 @@ class ANN:
 	def iterLayers(self, inst):
 		output = inst
 		for layer in self.layers:
-			output = self.layers.getOutput(output)
+			output = layer.getOutput(output)
+		return output
 
 	'''
 	Function Name: evaluation
@@ -93,7 +93,15 @@ class ANN:
 	-y: The labels to X.
 	'''
 	def evaluation(self, X, y):
-		pass
+		print("XSHAPE: ", X.shape)
+		print(X[1,:])
+		for i in range(X.shape[0]): # change to 0
+			output = self.iterLayers(X[i,:])
+			print("MaxTest: ", np.argmax(np.max(output, axis=0)))
+			print("Output:", output, "\n", "actual", y[i])
+		return (0, 0)
+
+	def getMax()
 	'''
 	Function Name: backpropagate
 
@@ -105,15 +113,16 @@ class ANN:
 		weights = [np.zeros(d.weights.shape) for d in self.layers]
 		bias = [np.zeros(d.bias.shape) for d in self.layers]
 		outlay = self.layers[-1]
+		#### DOES y NEED TO BE FORMATTED CORRECTLY?
 		delta = self.loss(y, outlay.output, derivative = True) * outlay.activation(outlay.z, derivative = True)
 		bias[-1] = delta
 		weights[-1] = np.dot(delta, self.layers[-2].output.transpose())
 
-		for layer in range(2, len(self.layers)):
-			currlay = self.layers[-layer]
-			delta = np.dot(currlay.weights.transpose(), delta) * currlayer.output
-			bias[-layer] = delta
-			weights[-layer] = np.dot(delta, self.layers[-layer-1].output.transpose())
+		for i in range(2, len(self.layers)):
+			currlay = self.layers[-i]
+			delta = np.dot(currlay.weights.transpose(), delta) * currlay.output
+			bias[-i] = delta
+			weights[-i] = np.dot(delta, self.layers[-i-1].output.transpose())
 		return (bias, weights)
 
 	'''
@@ -209,6 +218,8 @@ class Dense:
 			self.activation = self.relu
 		elif activation == "elu":
 			self.activation = self.elu
+		elif activation == "softmax":
+			self.activation = self.softmax
 
 	'''
 	Function Name: getOutput
@@ -226,7 +237,7 @@ class Dense:
 		#print(self.activation)
 		#print(inputx.shape)
 		self.z = np.dot(self.weights, inputx.reshape(inputx.shape[0], 1)) + self.bias
-		print("Z", self.z)
+		#print("Z", self.z)
 		self.output = self.activation(self.z)
 		return self.output
 
@@ -337,8 +348,23 @@ class Dense:
 	Function Parameters:
 	-x The value to apply this activation function to
 	'''
-	def softmax(self, x):
-		return np.exp(x) / np.sum(np.exp(x), axis = 0)
+	def softmax(self, x, derivative = False):
+		sm = np.exp(x) / np.sum(np.exp(x), axis = 0)
+		if derivative:
+			'''
+			# https://themaverickmeerkat.com/2019-10-23-Softmax/ The previous link is where the derivitave version has been taken from.
+			m,n = x.shape
+			# t1 and t2 are tensors
+			t1 = np.einsum("ij,ik->ijk", sm, sm)
+			t2 = np.einsum("ij,jk->ijk", sm, no.eye(n,n))
+			dersm = t2 - t1
+			print("dersm", dersm)
+			return dersm
+			'''
+
+			return sm * (1 - sm)
+		else:
+			return sm
 
 	'''
 	Function Name: elu
@@ -361,6 +387,7 @@ class Dense:
 			else:
 				return alpha * (np.exp(x) - 1)
 
+'''
 def main():
 
 	# Test that getOutput function in Dense is correct.
@@ -369,3 +396,5 @@ def main():
 	print("output", d.softmax(d.getOutput(np.array([0.07172362, 0.83726111, 0.11233911]))))
 	#print(np.array([0.07172362, 0.83726111, 0.11233911]).reshape((3,1)))
 main()
+'''
+
