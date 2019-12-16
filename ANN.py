@@ -54,10 +54,10 @@ class ANN:
 			while tc < nrow:
 				while bc < batch_size and tc < nrow:
 					output = self.iterLayers(X[tc,:])
-					b, w = self.backpropagate(y[tc]) # maybe change later depending on what format I force for y. 
-					for i in range(len(b)):
-						self.layers[i].weights = self.layers[i].weights + w[i]
-						self.layers[i].bias = self.layers[i].bias + b[i]
+					b, w = self.backpropagate(y[tc], X[tc,:]) # maybe change later depending on what format I force for y. 
+					for i in range(len(self.layers)):
+						self.layers[i].weightsbp = self.layers[i].weightsbp + w[i] # error here check. added to weights not weights bp
+						self.layers[i].biasbp = self.layers[i].biasbp + b[i]   # error here check
 					tc += 1
 					bc += 1
 				bc = 0
@@ -93,15 +93,31 @@ class ANN:
 	-y: The labels to X.
 	'''
 	def evaluation(self, X, y):
-		print("XSHAPE: ", X.shape)
-		print(X[1,:])
-		for i in range(X.shape[0]): # change to 0
+		#print("XSHAPE: ", X.shape)
+		#print(X[1,:])
+		correct = 0
+		total_obs = X.shape[0]
+		for i in range(total_obs): # change to 0
 			output = self.iterLayers(X[i,:])
-			print("MaxTest: ", np.argmax(np.max(output, axis=0)))
-			print("Output:", output, "\n", "actual", y[i])
-		return (0, 0)
+			#print("MaxTest: ", self.getMax(output))
+			#print("Output:", output, "\n", "actual", y[i])
+			if self.getMax(output) == y[i]:
+				correct += 1
+		return (0, correct / total_obs)
 
-	def getMax()
+	def getMax(self, output):
+		c_max = None
+		pos = None
+		for i in range(output.shape[0]):
+			#print("sdfsd", output[i])
+			if i == 0:
+				c_max = output[0]
+				pos = 0
+			else:
+				if output[i] > c_max:
+					c_max = output[i]
+					pos = i
+		return pos
 	'''
 	Function Name: backpropagate
 
@@ -109,21 +125,37 @@ class ANN:
 	The training process of a feed forward neural network.
 	"reverse-mode differentiation"
 	'''
-	def backpropagate(self, y):
+	def backpropagate(self, y, input):
 		weights = [np.zeros(d.weights.shape) for d in self.layers]
 		bias = [np.zeros(d.bias.shape) for d in self.layers]
 		outlay = self.layers[-1]
-		#### DOES y NEED TO BE FORMATTED CORRECTLY?
-		delta = self.loss(y, outlay.output, derivative = True) * outlay.activation(outlay.z, derivative = True)
+		y_vec = None
+		delta = None
+		#print("outlay units", outlay.units)
+		if outlay.units == 1:
+			y_vec = np.array([y]).reshape((1,1))
+		else:
+			y_vec = np.zeros((outlay.units, 1), dtype = int)
+			y_vec[y][0] = 1
+		delta = self.loss(y_vec, outlay.output, derivative = True) * outlay.activation(outlay.z, derivative = True)
+		#print("y_hat", y_vec)
 		bias[-1] = delta
 		weights[-1] = np.dot(delta, self.layers[-2].output.transpose())
 
-		for i in range(2, len(self.layers)):
-			currlay = self.layers[-i]
-			delta = np.dot(currlay.weights.transpose(), delta) * currlay.output
-			bias[-i] = delta
-			weights[-i] = np.dot(delta, self.layers[-i-1].output.transpose())
-		return (bias, weights)
+		# NOTE: add case where there is only one layer and below for loop isn't needed.
+
+		for i in range(2, len(self.layers)+1):
+			if i != (len(self.layers)+1):
+				currlay = self.layers[-i]
+				delta = np.dot(self.layers[-i+1].weights.transpose(), delta) * currlay.activation(currlay.z, derivative = True)
+				bias[-i] = delta
+				weights[-i] = np.dot(delta, self.layers[-i-1].output.transpose())
+			else:
+				currlay = self.layers[-i]
+				delta = np.dot(self.layers[-i+1].weights.transpose(), delta) * currlay.activation(currlay.z, derivative = True)
+				bias[-i] = delta
+				weights[-i] = np.dot(delta, input)
+			return (bias, weights)
 
 	'''
 	Function Name: add
@@ -133,6 +165,26 @@ class ANN:
 	'''
 	def add(self, t_layer):
 		self.layers.append(t_layer)
+
+	'''
+	Function Name: predict
+
+	Function Description:
+	Function that returns a prediction for an observation
+
+	Function Parameters:
+	-X: Instance(s) to predict for.
+	'''
+	def predict(self, X):
+		pred_list = []
+		total_obs = X.shape[0]
+		for i in range(total_obs): # change to 0
+			output = self.iterLayers(X[i,:])
+			if self.layers[-1].units == 1:
+				pred_list.append(float(output[0][0]))
+			else:
+				pred_list.append(self.getMax(output))
+		return pred_list
 
 	'''
 	Function Name: saveWeights
@@ -170,7 +222,7 @@ class ANN:
 		if derivative:
 			return 2 * (y_hat - y)
 		else:
-			return (y - y_hat) ** 2
+			return np.square(y - y_hat)
 
 class Dense:
 
@@ -277,13 +329,19 @@ class Dense:
         Function Name: updateWB
 
         Function Description:
-        This function updates the weights based on the parameters
+        This function updates the weights based on the parameters.
 
 	Function Parameters:
 	-learning_rate: The value for the learning rate.
         '''
 	def updateWB(self, learning_rate):
+		w = self.weights
+		#print("bp: ", self.weightsbp)
+		#print("W: ", w)
 		self.weights = self.weights - (self.weightsbp * learning_rate)
+		#print("self.weights: ", self.weights)
+		#print()
+		#print()
 		self.bias = self.bias - (self.biasbp * learning_rate)
 		self.reset()
 
@@ -336,8 +394,14 @@ class Dense:
 
 	note: has issues with "dead" relu.
 	'''
-	def relu(self, x):
-		return max(0,x)
+	def relu(self, x, derivative = False):
+		if derivative:
+			if x > 0:
+				return 1
+			else:
+				return 0
+		else:
+			return max(0,x)
 
 	'''
 	Function Name: softmax
@@ -378,23 +442,31 @@ class Dense:
 	-x: value that is to be "squished".
 	-alpha: Parameter that can be tuned.
 	'''
-	def elu(self, x, alpha):
-		if alpha < 0:
-			raise Exception("Alpha should not be negative The value of alpha was: {}".format(alpha))
-		else:
-			if x > 0:
-				return 0
+	def elu(self, x, alpha, derivative = False):
+		if derivative:
+			if x >= 0:
+				return 1
 			else:
-				return alpha * (np.exp(x) - 1)
+				return alpha * np.exp(x)
+		else:
+			if alpha < 0:
+				raise Exception("Alpha should not be negative The value of alpha was: {}".format(alpha))
+			else:
+				if x >= 0:
+					return x
+				else:
+					return alpha * (np.exp(x) - 1)
 
 '''
 def main():
 
 	# Test that getOutput function in Dense is correct.
-	d = Dense(3, 6, "sigmoid", "random", "random")
+	#d = Dense(3, 6, "sigmoid", "random", "random")
 	#print(d.bias.shape)
-	print("output", d.softmax(d.getOutput(np.array([0.07172362, 0.83726111, 0.11233911]))))
+	#print("output", d.softmax(d.getOutput(np.array([0.07172362, 0.83726111, 0.11233911]))))
 	#print(np.array([0.07172362, 0.83726111, 0.11233911]).reshape((3,1)))
+	print(np.array([1,2,3]).reshape((3,1)) - np.array([1,1,1]).reshape((3,1)))
+#) - (np.array([1,2,3]) * 5))
+
 main()
 '''
-
