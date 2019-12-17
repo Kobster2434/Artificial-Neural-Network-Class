@@ -125,7 +125,7 @@ class ANN:
 	The training process of a feed forward neural network.
 	"reverse-mode differentiation"
 	'''
-	def backpropagate(self, y, input):
+	def backpropagate(self, y, input_):
 		weights = [np.zeros(d.weights.shape) for d in self.layers]
 		bias = [np.zeros(d.bias.shape) for d in self.layers]
 		outlay = self.layers[-1]
@@ -154,7 +154,7 @@ class ANN:
 				currlay = self.layers[-i]
 				delta = np.dot(self.layers[-i+1].weights.transpose(), delta) * currlay.activation(currlay.z, derivative = True)
 				bias[-i] = delta
-				weights[-i] = np.dot(delta, input)
+				weights[-i] = np.dot(delta, input_)
 			return (bias, weights)
 
 	'''
