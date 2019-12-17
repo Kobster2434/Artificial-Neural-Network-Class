@@ -396,12 +396,9 @@ class Dense:
 	'''
 	def relu(self, x, derivative = False):
 		if derivative:
-			if x > 0:
-				return 1
-			else:
-				return 0
+			return np.where(x > 0, 1, 0)
 		else:
-			return max(0,x)
+			return np.maximum(0, x)
 
 	'''
 	Function Name: softmax
