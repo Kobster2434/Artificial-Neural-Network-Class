@@ -224,6 +224,48 @@ class ANN:
 		else:
 			return np.square(y - y_hat)
 
+	'''
+	Function Name: mutate
+
+	Function Description:
+	Function that randomly "mutates" the weights and biases.
+
+	Function Parameters:
+	-scalar: Number to scale how much we mutate the weights and biases.
+	'''
+	def mutate(self, scalar = 0.1):
+		for layer in self.layers:
+			# random.choice for what direction to mutate.
+			layer.weights += np.random.rand(layer.units, layer.input_shape) * scalar * random.choice([-1, 1]))
+			layer.bias += np.random.rand(layer.units, 1) * scalar * random.choice([-1, 1]))
+
+	'''
+	Function Name: crossover
+
+	Function Description:
+	Function that "crosses" over weights with another neural network.
+
+	Later add in different types of crossover
+
+	Function Parameter:
+	-other: The other neural network with identical structure to cross over the weights.
+	-type: The type of crossover to use. (not implemented yet, will be implemented at a later date)
+
+	Function Requirements:
+	- The other class needs to be of the same structure or this will not work.
+	- Having an even number of layers is best but not required. (the last layer in odd will never be crossed over)
+	'''
+	def crossover(self, other, type = None):
+		for i in range(0, len(self.layers), 2):
+			if (i+1) < len(self.layers):
+				self.layers[i].weights, other.layers[i+1].weights = other.layers[i+1].weights. self.layers[i].weights
+
+	def __repr__(self):
+		return "Artificial Neural Network"
+
+	def __str__(self):
+		return "Artificial Neural Network"
+
 class Dense:
 
 	'''
