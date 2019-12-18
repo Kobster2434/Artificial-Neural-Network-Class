@@ -1,4 +1,5 @@
 import numpy as np
+import _pickle as cPickle
 
 class ANN:
 
@@ -196,7 +197,12 @@ class ANN:
 	-filename: The name of the file to save the weights (biases to)
 	'''
 	def saveWeights(self, filename):
-		pass
+		try:
+			f = open(filename, "wb")
+			f.write(cPickle.dumps(self.__dict__))
+			f.close()
+		except:
+			print("Can't open the specified file")
 
 	'''
 	Function Name: readWeights
@@ -210,7 +216,13 @@ class ANN:
 	-filename: The filename to read the weights from.
 	'''
 	def readWeights(self, filename):
-		pass
+		try:
+			f = open(filename, "rb")
+			pickle_data = f.read()
+			f.close()
+			self.__dict__ = cPickle.loads(pickle_data) # restoring the weights.
+		except:
+			print("Error: Can't open the file")
 
 	'''
 	Function Name: mse
@@ -236,8 +248,8 @@ class ANN:
 	def mutate(self, scalar = 0.1):
 		for layer in self.layers:
 			# random.choice for what direction to mutate.
-			layer.weights += np.random.rand(layer.units, layer.input_shape) * scalar * random.choice([-1, 1]))
-			layer.bias += np.random.rand(layer.units, 1) * scalar * random.choice([-1, 1]))
+			layer.weights += np.random.rand(layer.units, layer.input_shape) * scalar * random.choice([-1, 1])
+			layer.bias += np.random.rand(layer.units, 1) * scalar * random.choice([-1, 1])
 
 	'''
 	Function Name: crossover

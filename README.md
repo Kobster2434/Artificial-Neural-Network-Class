@@ -3,8 +3,6 @@ My own implementation of an Artificial Neural Network class.
 
 Things still needed to implement:
 
-- saveWeights and loadWeights functions.
-
 - Return loss in evaluation method.
 
 - Implement other activation functions.

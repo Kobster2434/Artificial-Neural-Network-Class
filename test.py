@@ -46,8 +46,16 @@ classifier.add(Dense(input_shape = 13, units = 2, activation = "softmax",
 classifier.compile("mse", 0.01)
 
 
-classifier.fit(X_train, y_train, batch_size = 300, epochs = 1500)
+classifier.fit(X_train, y_train, batch_size = 300, epochs = 50)
 
+classifier.saveWeights("test.txt")
+
+c2 = ANN()
+
+c2.readWeights("test.txt")
+
+c2.layers[0].weights
+classifier.layers[0].weights
 _, accuracy = classifier.evaluation(X_test, y_test)
 print(accuracy)
 
