@@ -1,5 +1,6 @@
 import numpy as np
 import _pickle as cPickle
+import random
 
 class ANN:
 
@@ -262,15 +263,27 @@ class ANN:
 	Function Parameter:
 	-other: The other neural network with identical structure to cross over the weights.
 	-type: The type of crossover to use. (not implemented yet, will be implemented at a later date)
+	-prob: Crossover probability for each individual weight.
 
 	Function Requirements:
 	- The other class needs to be of the same structure or this will not work.
 	- Having an even number of layers is best but not required. (the last layer in odd will never be crossed over)
 	'''
-	def crossover(self, other, type = None):
-		for i in range(0, len(self.layers), 2):
-			if (i+1) < len(self.layers):
-				self.layers[i].weights, other.layers[i+1].weights = other.layers[i+1].weights. self.layers[i].weights
+	def crossover(self, other, type = None, prob = 0.5):
+		for i in range(0, len(self.layers)):
+			original_w = self.layers[i].weights
+			original_b = self.layers[i].bias
+			other_orig_w = other.layers[i].weights
+			other_orig_b = other.layers[i].bias
+			for i in range(self.layers.weights.shape[0]):
+				for j in range(self.layers.weights.shape[1]:
+				if random.random() < 0.5:
+					self.layers.weights[i][j], other.layers.weights[i][j] = other_orig_w[i][j], original_w[i][j]
+			for i in range(self.layers.bias.shape[0]):
+				for j in range(self.layers.bias.shape[1]:
+					if random.random() < 0.5:
+						self.layers.bias[i][j], other.layers.biass[i][j] = other_orig_b[i][j], original_b[i][j]
+
 
 	def __repr__(self):
 		return "Artificial Neural Network"
@@ -389,7 +402,7 @@ class Dense:
 	-learning_rate: The value for the learning rate.
         '''
 	def updateWB(self, learning_rate):
-		w = self.weights
+		#w = self.weights
 		#print("bp: ", self.weightsbp)
 		#print("W: ", w)
 		self.weights = self.weights - (self.weightsbp * learning_rate)
