@@ -276,11 +276,11 @@ class ANN:
 			other_orig_w = other.layers[i].weights
 			other_orig_b = other.layers[i].bias
 			for i in range(self.layers.weights.shape[0]):
-				for j in range(self.layers.weights.shape[1]:
-				if random.random() < 0.5:
-					self.layers.weights[i][j], other.layers.weights[i][j] = other_orig_w[i][j], original_w[i][j]
+				for j in range(self.layers.weights.shape[1]):
+					if random.random() < 0.5:
+						self.layers.weights[i][j], other.layers.weights[i][j] = other_orig_w[i][j], original_w[i][j]
 			for i in range(self.layers.bias.shape[0]):
-				for j in range(self.layers.bias.shape[1]:
+				for j in range(self.layers.bias.shape[1]):
 					if random.random() < 0.5:
 						self.layers.bias[i][j], other.layers.biass[i][j] = other_orig_b[i][j], original_b[i][j]
 
