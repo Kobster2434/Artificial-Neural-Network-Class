@@ -157,7 +157,7 @@ class ANN:
 				delta = np.dot(self.layers[-i+1].weights.transpose(), delta) * currlay.activation(currlay.z, derivative = True)
 				bias[-i] = delta
 				weights[-i] = np.dot(delta, input_)
-			return (bias, weights)
+		return (bias, weights)
 
 	'''
 	Function Name: add
